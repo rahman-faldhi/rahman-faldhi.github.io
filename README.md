@@ -870,5 +870,34 @@ confusion_mtx = confusion_matrix(Y_true, Y_pred_classes)
 plot_confusion_matrix(confusion_mtx, classes = range(7)) 
 
 ```
+![confussion matrix](https://user-images.githubusercontent.com/72899789/96360092-cd503980-1143-11eb-9aa7-cb9368e23e20.png)
+# Step 9: Prediction using validation data
+Prediction using validation data, here is the prediction of data on x_validate, here is an example
+```python
+predictions = model.predict(x_validate)
+predictions
 
-# Step 9: 
+def index_pred(ind):
+  plt.imshow(x_validate[ind][:,:,0]);
+
+  print()
+  
+pred=str(np.argmax(predictions[ind]))
+if pred == '0':
+  print("Actinic keratoses")
+elif pred == '1':
+  print('Basal cell carcinoma')
+elif pred == '2':
+  print('Benign keratosis-like lesions')
+elif pred == '3':
+  print('Dermatofibroma')
+elif pred == '4':
+  print('Melanocytic nevi')
+elif pred == '5':
+  print('melanoma')
+elif pred == '6':
+  print('Vascular lesions')
+
+index_pred(53)
+```
+
