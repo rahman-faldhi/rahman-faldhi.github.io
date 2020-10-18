@@ -900,4 +900,49 @@ elif pred == '6':
 
 index_pred(53)
 ```
+Actinic keratoses
+![predict validate](https://user-images.githubusercontent.com/72899789/96360383-0b029180-1147-11eb-9dd9-68865dcfcc67.png)
 
+# Step 10: Prediction using a new image
+```python
+import numpy as np
+import cv2 as cv
+import matplotlib.pyplot as plt
+
+image_ex = cv.imread('/content/sample.jpg')
+
+image_ex = cv.resize(image_ex, (100, 75))
+
+image_ex = image_ex.astype('float32')
+
+image_ex_mean = np.mean(image_ex)
+image_ex_std = np.std(image_ex)
+image_ex = (image_ex - image_ex_mean)/image_ex_std
+
+image_ex.shape
+
+image_ex = image_ex.reshape((1, 75, 100, 3))
+
+image_ex.shape
+
+predictions_ex = model.predict(image_ex)
+predictions_ex
+
+pred_ex=str(np.argmax(predictions_ex[0]))
+
+if pred_ex == '0':
+  print("Actinic keratoses")
+elif pred_ex == '1':
+  print('Basal cell carcinoma')
+elif pred_ex == '2':
+  print('Benign keratosis-like lesions')
+elif pred_ex == '3':
+  print('Dermatofibroma')
+elif pred_ex == '4':
+  print('Melanocytic nevi')
+elif pred_ex == '5':
+  print('melanoma')
+elif pred_ex == '6':
+  print('Vascular lesions')
+```
+Vascular lesions
