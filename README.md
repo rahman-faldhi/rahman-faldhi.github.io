@@ -337,3 +337,47 @@ display_activation(activations, 5, 5, 1)
 .....
 display_activation(activations, 8, 8, 7)
 ```
+here is the example from 8th layers
+![8th_layer_visualization](https://user-images.githubusercontent.com/72899789/96359682-c45d6900-113f-11eb-8c68-8b9b0ec93d32.png)
+# Step 7: Image Augmentation With ImageDataGenerator
+For the image data generator, each parameter used in the image data generator will be stored in a variable called datagen which will be fitted with x_train.
+```python
+datagen = ImageDataGenerator(
+        featurewise_center=False,  # set input mean to 0 over the dataset
+        samplewise_center=False,  # set each sample mean to 0
+        featurewise_std_normalization=False,  # divide inputs by std of the dataset
+        samplewise_std_normalization=False,  # divide each input by its std
+        zca_whitening=False,  # apply ZCA whitening
+        rotation_range=10,  # randomly rotate images in the range (degrees, 0 to 180)
+        zoom_range = 0.1, # Randomly zoom image 
+        width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
+        height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
+        horizontal_flip=False,  # randomly flip images
+        vertical_flip=False)  # randomly flip images
+
+datagen.fit(x_train)
+from numpy import expand_dims
+from keras.preprocessing.image import load_img
+from keras.preprocessing.image import img_to_array
+from keras.preprocessing.image import ImageDataGenerator
+from matplotlib import pyplot
+
+def aug_param(prm):
+  img = load_img('/content/skin_cancer_mnist/HAM10000_images_part_1/ISIC_0024307.jpg')
+  data = img_to_array(img)
+  samples = expand_dims(data, 0)
+  datagen2 = (prm)
+  it = datagen2.flow(samples, batch_size=1)
+  for i in range(9):
+    pyplot.subplot(330 + 1 + i)
+    batch = it.next()
+    image = batch[0].astype('uint8')
+    pyplot.imshow(image)
+  pyplot.show()
+param=[ImageDataGenerator(width_shift_range=[-200,200]),ImageDataGenerator(height_shift_range=0.5),ImageDataGenerator(horizontal_flip=True),ImageDataGenerator(rotation_range=90),ImageDataGenerator(brightness_range=[0.2,1.0]),ImageDataGenerator(zoom_range=[0.5,1.0])]
+name=['Random Horizontal Shift','Random Vertical Shift','Random horizontal Flip','Random Rotation Augmentation','Random Brightness Augmentation','Random Zoom Augmentation']
+
+for i in range(len(name)):
+  print('untuk: ',name[i])
+  aug_param(param[i])
+```
