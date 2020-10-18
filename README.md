@@ -156,7 +156,7 @@ skin_df['path'] = skin_df['image_id'].map(imageid_path_dict.get)
 skin_df['cell_type'] = skin_df['dx'].map(lesion_type_dict.get) 
 skin_df['cell_type_idx'] = pd.Categorical(skin_df['cell_type']).codes
 ```
-# Step 4: Data Cleansing
+# Step 3: Data Cleansing
 On data cleaning, display features that still have a null value, in this case, age still has a null value, then the null value is replaced with the mean value of the whole 'age'. next is resizing the entire image. then display as many as 5 sample images per each skin cancer category
 ```python
 skin_df.head(100)
@@ -222,4 +222,118 @@ for n_axs, (type_name, type_rows) in zip(m_axs,
         c_ax.imshow(c_row['image'])
         c_ax.axis('off')
 fig.savefig('category_samples.png', dpi=300)
+```
+![5_samples_categories](https://user-images.githubusercontent.com/72899789/96359455-354f5180-113d-11eb-962c-cd189efe267f.png)
+```python
+skin_df['image'].map(lambda x: x.shape).value_counts()
+```
+# Step 4: Features Engineering
+In feature engineering, splitting the data on the train data and the test data, then normalizing the data, then spilling the data on the train data and validating the data. then reshape each data
+```python
+features=skin_df.drop(columns=['cell_type_idx'],axis=1)
+target=skin_df['cell_type_idx']
+x_train_o, x_test_o, y_train_o, y_test_o = train_test_split(features, target, test_size=0.20,random_state=1234)
+#Normalisasi data
+
+x_train = np.asarray(x_train_o['image'].tolist())
+x_test = np.asarray(x_test_o['image'].tolist())
+
+x_train_mean = np.mean(x_train) 
+x_train_std = np.std(x_train)
+
+x_test_mean = np.mean(x_test)
+x_test_std = np.std(x_test)
+
+x_train = (x_train - x_train_mean)/x_train_std
+x_test = (x_test - x_test_mean)/x_test_std
+y_train = to_categorical(y_train_o, num_classes = 7)
+y_test = to_categorical(y_test_o, num_classes = 7)
+x_train, x_validate, y_train, y_validate = train_test_split(x_train, y_train, test_size = 0.20, random_state = 10)
+x_train = x_train.reshape(x_train.shape[0], *(75, 100, 3))
+x_test = x_test.reshape(x_test.shape[0], *(75, 100, 3))
+x_validate = x_validate.reshape(x_validate.shape[0], *(75, 100, 3))
+```
+# Step 5: CNN
+For CNN, use the hard sequential model, use filters 32 and 64 on the convolutional layer, and then use the pooling (MaxPool2D) layer, and use the dropout and dense. Then, the optimizer used is Adam
+```python
+input_shape = (75, 100, 3)
+num_classes = 7
+
+model = Sequential()
+model.add(Conv2D(32, kernel_size=(3, 3),activation='relu',padding = 'Same',input_shape=input_shape)) #1
+model.add(Conv2D(32,kernel_size=(3, 3), activation='relu',padding = 'Same',)) #2
+model.add(MaxPool2D(pool_size = (2, 2))) #3
+model.add(Dropout(0.25))
+
+model.add(Conv2D(64, (3, 3), activation='relu',padding = 'Same')) #4
+model.add(Conv2D(64, (3, 3), activation='relu',padding = 'Same')) #5
+model.add(MaxPool2D(pool_size=(2, 2))) #6
+model.add(Dropout(0.40))
+
+model.add(Flatten())
+model.add(Dense(128, activation='relu')) #7
+model.add(Dropout(0.5)) #8
+model.add(Dense(num_classes, activation='softmax')) 
+model.summary()
+```
+```python
+Model: "sequential"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+conv2d (Conv2D)              (None, 75, 100, 32)       896       
+_________________________________________________________________
+conv2d_1 (Conv2D)            (None, 75, 100, 32)       9248      
+_________________________________________________________________
+max_pooling2d (MaxPooling2D) (None, 37, 50, 32)        0         
+_________________________________________________________________
+dropout (Dropout)            (None, 37, 50, 32)        0         
+_________________________________________________________________
+conv2d_2 (Conv2D)            (None, 37, 50, 64)        18496     
+_________________________________________________________________
+conv2d_3 (Conv2D)            (None, 37, 50, 64)        36928     
+_________________________________________________________________
+max_pooling2d_1 (MaxPooling2 (None, 18, 25, 64)        0         
+_________________________________________________________________
+dropout_1 (Dropout)          (None, 18, 25, 64)        0         
+_________________________________________________________________
+flatten (Flatten)            (None, 28800)             0         
+_________________________________________________________________
+dense (Dense)                (None, 128)               3686528   
+_________________________________________________________________
+dropout_2 (Dropout)          (None, 128)               0         
+_________________________________________________________________
+dense_1 (Dense)              (None, 7)                 903       
+=================================================================
+Total params: 3,752,999
+Trainable params: 3,752,999
+Non-trainable params: 0
+_________________________________________________________________
+```
+```python
+optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+model.compile(optimizer = optimizer , loss = "categorical_crossentropy", metrics=["accuracy"])
+```
+# Step 6: Features Visualization
+Then here is performed data visualization per each layer
+```python
+from keras.models import Model
+layer_outputs = [layer.output for layer in model.layers]
+activation_model = Model(inputs=model.input, outputs=layer_outputs)
+activations = activation_model.predict(x_train[10].reshape(1,75,100,3))
+ 
+def display_activation(activations, col_size, row_size, act_index): 
+    activation = activations[act_index]
+    activation_index=0
+    fig, ax = plt.subplots(row_size, col_size, figsize=(row_size*2.5,col_size*1.5))
+    for row in range(0,row_size):
+        for col in range(0,col_size):
+            ax[row][col].imshow(activation[0, :, :, activation_index], cmap=None)
+            activation_index += 1
+display_activation(activations, 5, 5, 0)
+display_activation(activations, 5, 5, 1)
+.....
+.....
+.....
+display_activation(activations, 8, 8, 7)
 ```
